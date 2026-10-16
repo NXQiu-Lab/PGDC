@@ -1,0 +1,112 @@
+# MLIP-4 MTP active learning baseline for amorphous carbon
+# Hyperparameters chosen from common MLIP-2/3/4 active-learning literature
+# (Novikov et al., 2020/2023) and the milp-active-learning defaults.
+
+# -----------------------------------------------------------------------------
+# Paths
+# -----------------------------------------------------------------------------
+work_dir: "outputs/mlip4_al"
+seed_dataset: "data/mlip4_al/01_seed_dataset/seed.extxyz"
+
+# -----------------------------------------------------------------------------
+# MLIP-4 MTP model parameters
+# -----------------------------------------------------------------------------
+mtp:
+  # MTP level: 16 is the standard choice in MLIP-2/3/4 publications.
+  # Lower levels (6-10) train faster but are less expressive;
+  # higher levels (20+) are more accurate but slower and can overfit small sets.
+  level: 16
+
+  # Radial basis for moment tensor descriptors.
+  # Cinf basis with size 8 and 5.0 A cutoff is the most common default.
+  radial_basis: "RadialBasisCinf"
+  rb_size: 8
+  rb_min_dist: 1.0        # A; slightly below the C-C bond length (1.4 A)
+  rb_cutoff: 5.0          # A; covers 2nd-3rd neighbours in a-C
+
+  # Training convergence
+  # Note: benchmark showed ~8 min for 50 structures with max_iter=200 on 4 cores.
+  # For the 504-structure seed set, max_iter=500 gives a reasonable pilot runtime
+  # (~3-4 hours per retrain) while still converging to linstop.
+  max_iter_count: 500
+  linstop: 1.0e-4         # Ha; training stops when linear residual < linstop
+  rescaling: true
+  pretraining: true
+
+  # Loss weights (energy, forces, stress).  Energy=1, forces=0.01 is a
+  # common starting point when force data are available.
+  weight_energy: 1.0
+  weight_forces: 0.01
+  weight_stress: 0.0
+
+  species: [6]            # Carbon atomic number
+
+# -----------------------------------------------------------------------------
+# Active learning parameters
+# -----------------------------------------------------------------------------
+active_learning:
+  # Aim for ~10k total structures.  Seed (~2.5k) + AL additions.
+  # With 300 selections/iteration, ~25 iterations are needed from seed.
+  max_iterations: 25
+
+  # Extrapolation grade threshold gamma.
+  # Literature: gamma_save = 2-3, gamma_break = 10.
+  # We select frames with gamma > gamma_threshold up to max_select_per_iter.
+  gamma_threshold: 5.0
+  # Reject only catastrophic model-breakdown cases.  Observed MLIP-4 grades
+  # for this system are 1e6-1e8, so the break is set very high.
+  gamma_break: 1.0e+12
+
+  # Per-iteration budget.  300 structures/iteration reduces the number of
+  # expensive MTP retraining steps for a ~10k target dataset.
+  max_select_per_iter: 300
+
+  # Initial structure for MD exploration.  If null, the first frame of the
+  # seed dataset is used.
+  initial_structure: null
+
+# -----------------------------------------------------------------------------
+# ASE MD exploration with the current MTP
+# -----------------------------------------------------------------------------
+md:
+  # Temperature ladder.  Logarithmic-ish coverage from 300 K to 3000 K
+  # captures both room-temperature fluctuations and sp2/sp3 transitions in a-C.
+  temperatures: [300, 500, 800, 1000, 1500, 2000, 3000]
+
+  timestep_fs: 1.0
+  n_steps: 5000           # 5 ps per temperature
+  sample_interval: 50     # sample every 50 fs -> 100 frames per temperature
+  friction: 0.002         # 1/fs, Langevin friction
+
+# -----------------------------------------------------------------------------
+# CP2K DFT single-point parameters for selected structures
+# -----------------------------------------------------------------------------
+cp2k:
+  mode: "local"           # Change to slurm after configuring your own cluster
+  cp2k_cmd: "cp2k.psmp"
+  mpirun: "mpirun"
+  n_cores: 64             # 64 cores per single-point job
+  nodes: 1
+  partition: "compute"
+  exclude: ""
+  time_limit: "01:00:00"  # 1 hour per single-point is generous
+  max_parallel_jobs: 4    # Max concurrent CP2K SLURM jobs per iteration
+  cp2k_path: ""           # Use PATH, or provide your CP2K bin directory
+  cp2k_lib: ""            # Optional runtime library search path
+  cp2k_data: ""           # Configure CP2K_DATA_DIR in your environment
+  work_dir: "outputs/mlip4_al/02_al_loop"
+
+  input_params:
+    basis_set_file: "BASIS_MOLOPT"
+    potential_file: "GTH_POTENTIALS"
+    basis_set: "DZVP-MOLOPT-SR-GTH"
+    potential: "GTH-PBE-q4"
+    xc_functional: "PBE"
+    cutoff: 500
+    rel_cutoff: 50
+    ngrids: 4
+    eps_default: "1.0E-12"
+    scf_max_iter: 300
+    scf_eps: "1.0E-5"
+    scf_guess: "ATOMIC"
+    use_smear: true

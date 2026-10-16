@@ -1,0 +1,6 @@
+{
+  "host": "cluster.example.org",
+  "port": 22,
+  "username": "your_username",
+  "remote_work_dir": "/path/to/your/pgdc_jobs"
+}

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atom-dataset-index"
+version = "1.4.0"
+description = "Dataset quality profiling and benchmark tooling for SchNetPack-oriented atomistic datasets."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+dependencies = [
+    "ase>=3.28.0",
+    "dscribe>=2.1.2",
+    "phonopy>=2.20.0",
+    "seekpath>=2.1.0",
+    "schnetpack>=2.2.0",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "PyYAML>=6.0",
+    "matplotlib>=3.8",
+    "torch>=2.4",
+]
+
+[project.urls]
+Repository = "https://github.com/NXQiu-Lab/PGDC"
+Issues = "https://github.com/NXQiu-Lab/PGDC/issues"
+
+[project.optional-dependencies]
+sampling = [
+    "pyxtal>=0.6",
+]
+
+[dependency-groups]
+test = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[project.scripts]
+atom-dataset-index = "atom_dataset_index.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atom_dataset_index"]
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple"
+default = true
