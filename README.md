@@ -36,10 +36,18 @@ uv sync --locked --group test --extra sampling
 
 ## Dataset Profiling
 
-Provide your own ASE database; research datasets and trained models are not
-bundled. Periodic records need atomic numbers, positions, cell, PBC, energy
-and forces. Dataset energies must be in eV, forces in eV/Angstrom, and stress
-in eV/Angstrom^3 (positive tensile). CP2K labels are converted at parse time.
+The archived 17,540-structure SiO2 Round 3 snapshot matching the dataset size
+in manuscript Figure 5 is available as a [GitHub Release](https://github.com/NXQiu-Lab/PGDC/releases/tag/fig5-sio2-round3-17540-v1).
+Download `sio2_round3_17540_ev.db` for ASE-compatible data in eV and
+eV/Angstrom; the release includes provenance, a full-database unit audit,
+and SHA-256 checksums. This release provides the database snapshot; plotting
+scripts and exact historical candidate coordinates are not included.
+
+For other datasets, provide your own ASE database. Research databases and
+trained models are not bundled in the source checkout. Periodic records need
+atomic numbers, positions, cell, PBC, energy and forces. Dataset energies must
+be in eV, forces in eV/Angstrom, and stress in eV/Angstrom^3 (positive tensile).
+CP2K labels are converted at parse time.
 
 ```bash
 uv run atom-dataset-index dataset-profile-run \
